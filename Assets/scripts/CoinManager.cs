@@ -1,10 +1,12 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using TMPro;
 
 public class CoinManager : MonoBehaviour
 {
-    public Text coinCountText; // Assign in the inspector
+    public TMP_Text coinCountText; // Assign in the inspector
+    public TMP_Text coinTextOnMapCompleted;
     private int coinCount = 0;
 
     public GameObject plusOneTextPrefab; // Assign your prefab in the inspector
@@ -28,6 +30,7 @@ public class CoinManager : MonoBehaviour
     void UpdateCoinCountUI()
     {
         coinCountText.text = "" + coinCount.ToString();
+        coinTextOnMapCompleted.text = coinCount.ToString();
     }
 
     void ShowPlusOneAnimation(Vector3 position)

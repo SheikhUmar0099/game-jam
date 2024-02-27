@@ -11,6 +11,8 @@ TagManager:
   - cam
   - PlayerEyes
   - Coin
+  - Checkpoint
+  - Obstacle
   layers:
   - Default
   - TransparentFX
