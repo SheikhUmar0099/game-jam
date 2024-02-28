@@ -7,8 +7,10 @@ public class CheckpointManager : MonoBehaviour
 {
     public Transform player; // Reference to the player object
     public TMP_Text checkpointsText; // Reference to the UI text displaying checkpoints passed
-    private int checkpointsPassed = 0; // Counter for checkpoints passed
-    private Vector3 lastCheckpointPosition; // Position of the last checkpoint passed
+    public Text checkpointTextPrefab; // Assign your prefab in the inspector
+    public Transform canvasTransform; // Assign your canvas transform here
+    public GameObject[] checkpoints; // Array of checkpoints
+    private int currentCheckpointIndex = 0; // Index of the current checkpoint
     private Rigidbody playerRigidbody; // Reference to the player's Rigidbody component
     private bool isBlinking = false; // Flag to control blinking effect
     public float blinkDuration = 2f; // Duration of the blink effect
@@ -20,7 +22,6 @@ public class CheckpointManager : MonoBehaviour
 
     void Start()
     {
-        lastCheckpointPosition = player.position;
         playerRigidbody = player.GetComponent<Rigidbody>();
         UpdateCheckpointsText();
     }
@@ -29,9 +30,16 @@ public class CheckpointManager : MonoBehaviour
     {
         if (other.CompareTag("Checkpoint"))
         {
-            lastCheckpointPosition = other.transform.position;
-            checkpointsPassed++;
-            UpdateCheckpointsText();
+            for (int i = 0; i < checkpoints.Length; i++)
+            {
+                if (other.gameObject == checkpoints[i])
+                {
+                    currentCheckpointIndex = i;
+                    UpdateCheckpointsText();
+                    ShowCheckpointAnimation(other.transform.position, i + 1);
+                    break;
+                }
+            }
         }
         else if (other.CompareTag("Obstacle") && !isBlinking && !isRespawning)
         {
@@ -42,7 +50,7 @@ public class CheckpointManager : MonoBehaviour
 
             // Move player back to the last checkpoint
             playerRigidbody.isKinematic = true; // Make player kinematic
-            player.position = lastCheckpointPosition;
+            player.position = checkpoints[currentCheckpointIndex].transform.position;
 
             // Respawn player after a delay
             Invoke("RespawnPlayer", respawnDelay);
@@ -94,6 +102,48 @@ public class CheckpointManager : MonoBehaviour
 
     void UpdateCheckpointsText()
     {
-        checkpointsText.text = "" + checkpointsPassed;
+        checkpointsText.text = "" + (currentCheckpointIndex + 1);
+    }
+
+    void ShowCheckpointAnimation(Vector3 position, int checkpointNumber)
+    {
+        // Convert the world position of the checkpoint to a screen position
+        Vector3 screenPosition = Camera.main.WorldToScreenPoint(position);
+
+        // Adjust the screen position to shift the text to the left side
+        float xOffset = Screen.width * 0.3f; // You can adjust this value based on your preference
+        screenPosition.x -= xOffset;
+
+        // Instantiate the checkpoint text prefab at the adjusted screen position
+        Text checkpointText = Instantiate(checkpointTextPrefab, screenPosition, Quaternion.identity, canvasTransform);
+        checkpointText.text = "Checkpoint " + checkpointNumber;
+
+        // Start the animation
+        StartCoroutine(AnimateText(checkpointText.gameObject));
+    }
+
+
+    IEnumerator AnimateText(GameObject textObject)
+    {
+        float moveSpeed = 50f; // Speed of movement upwards
+        float fadeDuration = 3f; // Duration of fade
+        float elapsedTime = 0;
+        Vector3 startPosition = textObject.transform.position;
+        Text textComponent = textObject.GetComponent<Text>();
+
+        while (elapsedTime < fadeDuration)
+        {
+            // Move text upwards
+            textObject.transform.position = startPosition + new Vector3(0, elapsedTime * moveSpeed * Time.deltaTime, 0);
+
+            // Fade text out
+            float alpha = Mathf.Lerp(1, 0, elapsedTime / fadeDuration);
+            textComponent.color = new Color(textComponent.color.r, textComponent.color.g, textComponent.color.b, alpha);
+
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        Destroy(textObject); // Destroy the checkpoint text after animation is complete
     }
 }
